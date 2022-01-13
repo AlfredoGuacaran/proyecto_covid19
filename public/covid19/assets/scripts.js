@@ -1,69 +1,3 @@
-const dataPaises = [
-  {
-    location: 'US',
-    confirmed: 61556085,
-    deaths: 839500,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'India',
-    confirmed: 35875790,
-    deaths: 484213,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'Brazil',
-    confirmed: 22563104,
-    deaths: 620366,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'United Kingdom',
-    confirmed: 14708999,
-    deaths: 150712,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'France',
-    confirmed: 12311963,
-    deaths: 126707,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'Russia',
-    confirmed: 10485705,
-    deaths: 310513,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'Turkey',
-    confirmed: 10045658,
-    deaths: 83843,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'Germany',
-    confirmed: 7570361,
-    deaths: 114127,
-    recovered: 0,
-    active: 0,
-  },
-  {
-    location: 'Italy',
-    confirmed: 7554344,
-    deaths: 139265,
-    recovered: 0,
-    active: 0,
-  },
-];
-
 /// autenticacion
 async function getToken(email, password) {
   try {
@@ -93,10 +27,19 @@ async function getAllCountriesData() {
   try {
     const response = await fetch('http://localhost:3000/api/total');
     const data = await response.json();
-    // console.log(data.data);
+    return data.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
 
-    // return dataPaises;
-
+// funcion para traer data de un pais, retorna array de objetos
+async function getCountryData(country) {
+  try {
+    const response = await fetch(
+      ` http://localhost:3000/api/countries/${country}`
+    );
+    const data = await response.json();
     return data.data;
   } catch (error) {
     console.error(error);
@@ -125,7 +68,7 @@ function renderTabla(dataCounries) {
   dataCounries.forEach((country) => {
     $('#tabla-body').append(`
         <tr>
-            <th scope="row">${country.location}</th>
+            <th scope="row"> <div class="d-flex"><p class="mr-3">${country.location}</p><a class="link-primary link-modal" href="#" data-country=${country.location}>Ver detalle..</a></div></th>
             <td>${country.confirmed}</td>
             <td>${country.recovered}</td>
             <td>${country.active}</td>
@@ -133,10 +76,33 @@ function renderTabla(dataCounries) {
         </tr>
     `);
   });
+
+  dataLink();
+}
+//funcion para abrir modal
+function dataLink() {
+  try {
+    $('.link-modal').on('click', async function (event) {
+      const country = $(this).attr('data-country');
+
+      const dataCountry = await getCountryData(country);
+
+      console.log(dataCountry);
+
+      $('#country-modal').modal('show');
+      // $('.modal-body').html(
+      //   `<div id="chartContainer-country" style="height: 100%; width: 100%;"></div>`
+      // );
+
+      iniciarGrafico([dataCountry], 'chartContainer-country');
+    });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // funcion para renderizar el grafico
-function iniciarGrafico(dataGrafico) {
+function iniciarGrafico(dataGrafico, container = 'chartContainer') {
   // datapoints
   const confirmados = [];
   const muertos = [];
@@ -168,7 +134,7 @@ function iniciarGrafico(dataGrafico) {
     },
   ];
 
-  const chart = new CanvasJS.Chart('chartContainer', {
+  const chart = new CanvasJS.Chart(container, {
     animationEnabled: true,
     title: {
       text: 'Países con Covid19',
@@ -187,6 +153,15 @@ function iniciarGrafico(dataGrafico) {
     },
     data: covidData,
   });
+
+  console.log(chart.width, chart.height);
+
+  chart.width = +chart.width + 40;
+  chart.height = +chart.height + 40;
+
+  $('.modal-dialog').css('max-width', chart.width);
+  $('.modal-content').css('height', chart.height);
+
   chart.render();
 }
 
